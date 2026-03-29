@@ -44,7 +44,7 @@ Value rests in NEX, moves through UMX (wrapped NEX on the fast layer), and retur
 | Parameter | Value |
 |---|---|
 | **Total supply** | 100,000,000 NEX |
-| **Premine** | 33,000,000 NEX (33%) |
+| **Premine** | 33,000,000 NEX (33%) — 20M Bitcoin 1:1 snapshot + 13M team/treasury |
 | **Mineable** | 67,000,000 NEX (67%) |
 | **Block time** | 5 minutes |
 | **Initial block reward** | 95 NEX |
@@ -97,13 +97,20 @@ Halving 7:  ~2050    1.484375 → 0 (mining ends)
 
 | Allocation | Amount | Purpose |
 |---|---|---|
-| Protocol Treasury | 15,000,000 NEX | Governance-locked, multi-sig controlled |
-| Ecosystem Fund | 6,000,000 NEX | Grants, liquidity, partnerships |
-| Team | 5,000,000 NEX | 4-year linear vest, 1-year cliff |
-| Bridge Reserve | 3,000,000 NEX | NEX-UMX bridge collateral |
-| Mining Incentive | 2,000,000 NEX | Early miner bonuses, testnet rewards |
-| Security Fund | 1,000,000 NEX | Audits, bug bounties, insurance |
-| Community Airdrop | 1,000,000 NEX | Early adopters and contributors |
+**Bitcoin UTXO Snapshot — 20,000,000 NEX**
+
+Every BTC holder at fork height receives 1 NEX per 1 BTC. Claimable with existing Bitcoin private key + new post-quantum address. No action required until ready to claim.
+
+**Team + Treasury — 13,000,000 NEX**
+
+| Allocation | Amount | Purpose |
+|---|---|---|
+| Founder / Core Team | 4,000,000 NEX | 4-year linear vest, 1-year cliff |
+| AI Development Partners | 3,000,000 NEX | Claude (Anthropic), OpenAI contributions |
+| Protocol Treasury | 3,000,000 NEX | Governance-locked, multi-sig controlled |
+| Bridge Reserve | 1,500,000 NEX | NEX-UMX bridge collateral |
+| Ecosystem Fund | 1,000,000 NEX | Grants, liquidity, partnerships |
+| Security Fund | 500,000 NEX | Audits, bug bounties, insurance |
 
 All genesis addresses published. All vesting schedules enforced on-chain.
 
