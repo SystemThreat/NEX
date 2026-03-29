@@ -168,6 +168,7 @@ if(ENABLE_WALLET)
       bitcoin_util
       Boost::headers
     )
+    set_target_properties(bitcoin-wallet PROPERTIES OUTPUT_NAME nex-wallet)
     install_binary_component(bitcoin-wallet HAS_MANPAGE)
   endif()
 endif()
@@ -298,6 +299,7 @@ endif()
 # Bitcoin wrapper executable that can call other executables.
 if(BUILD_BITCOIN_BIN)
   add_executable(bitcoin bitcoin.cpp)
+  set_target_properties(bitcoin PROPERTIES OUTPUT_NAME nex)
   add_windows_resources(bitcoin bitcoin-res.rc)
   add_windows_application_manifest(bitcoin)
   target_link_libraries(bitcoin core_interface bitcoin_common bitcoin_util)
@@ -317,6 +319,7 @@ if(BUILD_DAEMON)
     bitcoin_node
     $<TARGET_NAME_IF_EXISTS:bitcoin_wallet>
   )
+  set_target_properties(bitcoind PROPERTIES OUTPUT_NAME nexd)
   install_binary_component(bitcoind HAS_MANPAGE)
 endif()
 if(ENABLE_IPC AND BUILD_DAEMON)
@@ -358,6 +361,7 @@ if(BUILD_CLI)
     libevent::core
     libevent::extra
   )
+  set_target_properties(bitcoin-cli PROPERTIES OUTPUT_NAME nex-cli)
   install_binary_component(bitcoin-cli HAS_MANPAGE)
 endif()
 
@@ -372,6 +376,7 @@ if(BUILD_TX)
     bitcoin_util
     univalue
   )
+  set_target_properties(bitcoin-tx PROPERTIES OUTPUT_NAME nex-tx)
   install_binary_component(bitcoin-tx HAS_MANPAGE)
 endif()
 

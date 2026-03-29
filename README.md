@@ -44,10 +44,10 @@ Value rests in NEX, moves through UMX (wrapped NEX on the fast layer), and retur
 | Parameter | Value |
 |---|---|
 | **Total supply** | 100,000,000 NEX |
-| **Premine** | 22,000,000 NEX (22%) |
-| **Mineable** | 78,000,000 NEX (78%) |
+| **Premine** | 33,000,000 NEX (33%) |
+| **Mineable** | 67,000,000 NEX (67%) |
 | **Block time** | 5 minutes |
-| **Initial block reward** | 110 NEX |
+| **Initial block reward** | 95 NEX |
 | **Halving interval** | 360,000 blocks (~3.4 years) |
 | **Number of halvings** | 7 |
 | **Mining ends** | ~2050 |
@@ -67,43 +67,43 @@ Value rests in NEX, moves through UMX (wrapped NEX on the fast layer), and retur
 
 | Epoch | Years | Reward/Block | Mined | Cumulative | % of Mineable |
 |---|---|---|---|---|---|
-| 1 | 2026–2029 | 110 NEX | 39,600,000 | 39,600,000 | 50.8% |
-| 2 | 2029–2033 | 55 NEX | 19,800,000 | 59,400,000 | 76.2% |
-| 3 | 2033–2036 | 27.5 NEX | 9,900,000 | 69,300,000 | 88.8% |
-| 4 | 2036–2040 | 13.75 NEX | 4,950,000 | 74,250,000 | 95.2% |
-| 5 | 2040–2043 | 6.875 NEX | 2,475,000 | 76,725,000 | 98.4% |
-| 6 | 2043–2047 | 3.4375 NEX | 1,237,500 | 77,962,500 | 99.9% |
-| 7 | 2047–2050 | 1.71875 NEX | 618,750 | 78,581,250 | 100% |
+| 1 | 2026–2029 | 95 NEX | 34,200,000 | 34,200,000 | 51.0% |
+| 2 | 2029–2033 | 47.5 NEX | 17,100,000 | 51,300,000 | 76.6% |
+| 3 | 2033–2036 | 23.75 NEX | 8,550,000 | 59,850,000 | 89.3% |
+| 4 | 2036–2040 | 11.875 NEX | 4,275,000 | 64,125,000 | 95.7% |
+| 5 | 2040–2043 | 5.9375 NEX | 2,137,500 | 66,262,500 | 98.9% |
+| 6 | 2043–2047 | 2.96875 NEX | 1,068,750 | 67,331,250 | 99.5% |
+| 7 | 2047–2050 | 1.484375 NEX | 534,375 | 67,865,625 | 100% |
 
 ### Halving Calendar
 
 ```
-Halving 1:  ~2029    110 → 55 NEX/block
-Halving 2:  ~2033    55 → 27.5
-Halving 3:  ~2036    27.5 → 13.75
-Halving 4:  ~2040    13.75 → 6.875
-Halving 5:  ~2043    6.875 → 3.4375
-Halving 6:  ~2047    3.4375 → 1.71875
-Halving 7:  ~2050    1.71875 → 0 (mining ends)
+Halving 1:  ~2029    95 → 47.5 NEX/block
+Halving 2:  ~2033    47.5 → 23.75
+Halving 3:  ~2036    23.75 → 11.875
+Halving 4:  ~2040    11.875 → 5.9375
+Halving 5:  ~2043    5.9375 → 2.96875
+Halving 6:  ~2047    2.96875 → 1.484375
+Halving 7:  ~2050    1.484375 → 0 (mining ends)
 ```
 
-7 halvings. 7 supercycles. 76% distributed by 2033.
+7 halvings. 7 supercycles. 77% distributed by 2033.
 
 ---
 
 ## Premine Allocation
 
-22,000,000 NEX allocated transparently at genesis:
+33,000,000 NEX allocated transparently at genesis:
 
 | Allocation | Amount | Purpose |
 |---|---|---|
-| Protocol Treasury | 10,000,000 NEX | Governance-locked, multi-sig controlled |
-| Ecosystem Fund | 4,000,000 NEX | Grants, liquidity, partnerships |
-| Team | 3,000,000 NEX | 4-year linear vest, 1-year cliff |
-| Bridge Reserve | 2,000,000 NEX | NEX-UMX bridge collateral |
-| Mining Incentive | 1,500,000 NEX | Early miner bonuses, testnet rewards |
+| Protocol Treasury | 15,000,000 NEX | Governance-locked, multi-sig controlled |
+| Ecosystem Fund | 6,000,000 NEX | Grants, liquidity, partnerships |
+| Team | 5,000,000 NEX | 4-year linear vest, 1-year cliff |
+| Bridge Reserve | 3,000,000 NEX | NEX-UMX bridge collateral |
+| Mining Incentive | 2,000,000 NEX | Early miner bonuses, testnet rewards |
 | Security Fund | 1,000,000 NEX | Audits, bug bounties, insurance |
-| Community Airdrop | 500,000 NEX | Early adopters and contributors |
+| Community Airdrop | 1,000,000 NEX | Early adopters and contributors |
 
 All genesis addresses published. All vesting schedules enforced on-chain.
 
@@ -223,7 +223,7 @@ Ticker:              NEX
 Max supply:          100,000,000
 Block time:          300 seconds (5 minutes)
 Halving interval:    360,000 blocks
-Initial reward:      110 NEX
+Initial reward:      95 NEX
 Mining algorithm:    SHA-256d (double SHA-256)
 Difficulty adjust:   2,016 blocks (~7 days)
 Default P2P port:    9333
