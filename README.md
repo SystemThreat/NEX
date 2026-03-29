@@ -1,79 +1,210 @@
-Bitcoin Core integration/staging tree
-=====================================
+# Satoshi's Vision
 
-https://bitcoincore.org
+## NEX ₿ + Lumero Ł
+a peer-to-peer electronic cash system with a fast transaction rail
 
-For an immediately usable, binary version of the Bitcoin Core software, see
-https://bitcoincore.org/en/download/.
+NEX is a fork of Bitcoin reoriented toward the original use case: peer-to-peer cash.
 
-What is Bitcoin Core?
----------------------
+Bitcoin proved that digital scarcity can exist without a central issuer. It solved the problem of money issuance. Over time, the system became more conservative, more custodial, and less practical for ordinary daily exchange.
 
-Bitcoin Core connects to the Bitcoin peer-to-peer network to download and fully
-validate blocks and transactions. It also includes a wallet and graphical user
-interface, which can be optionally built.
+NEX is an attempt to continue the part of the work that remains unfinished.
 
-Further information about Bitcoin Core is available in the [doc folder](/doc).
+It does not begin from the assumption that users should wait, trust intermediaries, or accept friction as inevitable. It begins from a simpler premise:
 
-License
--------
+**money should move directly between people, with final ownership preserved and practical payments restored.**
 
-Bitcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
-information or see https://opensource.org/license/MIT.
+---
 
-Development Process
--------------------
+## What is NEX
 
-The `master` branch is regularly built (see `doc/build-*.md` for instructions) and tested, but it is not guaranteed to be
-completely stable. [Tags](https://github.com/bitcoin/bitcoin/tags) are created
-regularly from release branches to indicate new official, stable release versions of Bitcoin Core.
+NEX ₿ is the base chain.
 
-The https://github.com/bitcoin-core/gui repository is used exclusively for the
-development of the GUI. Its master branch is identical in all monotree
-repositories. Release branches and tags do not exist, so please do not fork
-that repository unless it is for development reasons.
+It is the monetary layer:
+- finite supply
+- transparent issuance
+- auditable rules
+- direct ownership
+- Bitcoin-derived foundations
 
-The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md)
-and useful hints for developers can be found in [doc/developer-notes.md](doc/developer-notes.md).
+Its purpose is not to carry every feature. Its purpose is to remain legible, scarce, and verifiable.
 
-Testing
--------
+NEX is meant to hold value.
 
-Testing and code review is the bottleneck for development; we get more pull
-requests than we can review and test on short notice. Please be patient and help out by testing
-other people's pull requests, and remember this is a security-critical project where any mistake might cost people
-lots of money.
+---
 
-### Automated Testing
+## What is Lumero
 
-Developers are strongly encouraged to write [unit tests](src/test/README.md) for new code, and to
-submit new unit tests for old code. Unit tests can be compiled and run
-(assuming they weren't disabled during the generation of the build system) with: `ctest`. Further details on running
-and extending unit tests can be found in [/src/test/README.md](/src/test/README.md).
+Lumero Ł is the transaction rail.
 
-There are also [regression and integration tests](/test), written
-in Python.
-These tests can be run (if the [test dependencies](/test) are installed) with: `build/test/functional/test_runner.py`
-(assuming `build` is your build directory).
+It is the movement layer:
+- fast transfers
+- instant merchant settlement
+- low-friction payments
+- mobile-native experience
+- high-frequency application logic
 
-The CI (Continuous Integration) systems make sure that every pull request is tested on Windows, Linux, and macOS.
-The CI must pass on all commits before merge to avoid unrelated CI failures on new pull requests.
+Lumero exists so the user does not have to choose between sovereignty and usability.
 
-### Manual Quality Assurance (QA) Testing
+NEX provides the asset.
+Lumero provides motion.
 
-Changes should be tested by somebody other than the developer who wrote the
-code. This is especially important for large or high-risk changes. It is useful
-to add a test plan to the pull request description if testing the changes is
-not straightforward.
+---
 
-Translations
-------------
+## Why this project exists
 
-Changes to translations as well as new translations can be submitted to
-[Bitcoin Core's Transifex page](https://explore.transifex.com/bitcoin/bitcoin/).
+The original promise of electronic cash was not merely to create a scarce asset. It was to allow people to transact directly, online and in person, without requiring permission from banks or payment processors.
 
-Translations are periodically pulled from Transifex and merged into the git repository. See the
-[translation process](doc/translation_process.md) for details on how this works.
+That remains the objective.
 
-**Important**: We do not accept translation changes as GitHub pull requests because the next
-pull from Transifex would automatically overwrite them again.
+NEX is designed to restore the monetary base.
+Lumero is designed to restore spendability.
+
+The two together form a practical system:
+- save in NEX
+- move through Lumero
+- settle with final ownership preserved
+
+---
+
+## Design principles
+
+### 1. Simplicity at the base layer
+The monetary layer should be conservative.
+Complexity belongs at the edges, not in the root of the system.
+
+### 2. Speed where it matters
+Users should not need to wait an arbitrary length of time to make an ordinary payment.
+
+### 3. Self-custody first
+A system that depends entirely on custodians recreates the old model under new branding.
+
+### 4. Verifiability over slogans
+Claims should be inspectable in code, supply, reserves, and settlement behavior.
+
+### 5. No confusion between money and transport
+NEX is the monetary base.
+Lumero is the payment rail.
+The distinction should remain clear.
+
+---
+
+## Repository purpose
+
+This repository is the beginning of NEX as a Bitcoin-derived system.
+
+Its purpose is to establish:
+- chain identity
+- monetary rules
+- network parameters
+- wallet and node compatibility
+- bridge and settlement interfaces for Lumero
+
+The long-term objective is not novelty for its own sake.
+The objective is a system that can be used.
+
+---
+
+## Why fork Bitcoin
+
+Bitcoin was the breakthrough.
+A fork is not a rejection of that breakthrough. It is an acknowledgment that open systems can be continued.
+
+A fork allows a new chain to adopt a different path without asking permission from the old one.
+That is a feature of free software, not a defect.
+
+This project uses that freedom to pursue a clearer payments direction.
+
+---
+
+## Monetary policy
+
+NEX has its own issuance and supply model, separate from Bitcoin.
+That policy will be defined explicitly in code and documentation.
+Nothing should depend on ambiguity.
+
+Any allocation, premine, treasury, reserve, or vesting schedule must be visible and auditable.
+If a rule matters, it should be stated plainly.
+
+---
+
+## Intended use
+
+NEX and Lumero are intended for:
+- peer-to-peer payments
+- merchant acceptance
+- mobile payments
+- direct settlement
+- programmable payment experiences built on a clear monetary base
+
+The system is not designed around delay.
+It is designed around usable finality.
+
+---
+
+## Development priorities
+
+1. A stable NEX base chain
+2. A clear and auditable monetary schedule
+3. Lumero integration for fast movement
+4. Wallet software that hides complexity without hiding truth
+5. Merchant tools that make direct payment practical
+6. Security and verification before expansion
+
+---
+
+## Philosophy
+
+The purpose of a peer-to-peer cash system is not to imitate legacy finance with new symbols.
+It is to reduce reliance on trusted gatekeepers.
+
+If the system becomes dependent on the same narrow intermediaries, then the names have changed but the structure has not.
+
+NEX is an effort to preserve the monetary lesson of Bitcoin while continuing the payment mission that remains incomplete.
+
+---
+
+## Status
+
+This project is in active design and development.
+
+Early work focuses on:
+- Bitcoin-derived chain formation
+- network and supply rules
+- wallet integration
+- Lumero bridge architecture
+- payment flow design
+
+Specifications, code changes, and migration details will be published incrementally.
+
+---
+
+## Contributing
+
+Contributions should favor clarity over spectacle.
+
+Useful contributions include:
+- protocol review
+- implementation review
+- wallet and node testing
+- documentation
+- security analysis
+- payment flow design
+
+The standard is simple:
+make the system more correct, more understandable, and more useful.
+
+---
+
+## License
+
+This project inherits from Bitcoin's open-source tradition and remains subject to the applicable licenses of the inherited and modified code.
+Review all license files and notices before redistribution.
+
+---
+
+## Closing note
+
+A monetary system should not only be scarce.
+It should also be usable.
+
+NEX exists to continue that work.
