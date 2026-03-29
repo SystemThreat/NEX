@@ -4,13 +4,42 @@
 
 NEX is a Bitcoin-derived base chain paired with **Lumero**, a DAG-based instant payment layer.
 
-**NEX** carries the reserve asset — finite supply, transparent issuance, auditable rules.
-**Lumero** carries the movement — instant transfers, merchant settlement, mobile-native payments.
-**KnexPay** is the consumer wallet — one interface for both layers.
+**NEX** holds value — finite supply, transparent issuance, auditable rules.
+**UMX** is wrapped NEX in motion — instant transfers, merchant settlement, mobile-native payments.
+**KnexPay** orchestrates both — one wallet, dual balances, reserve-first design.
+
+---
+
+## Monetary Hierarchy
+
+```
+NEX  ₿  — reserve, settlement, gravity
+ |
+ |  1 NEX = 1,000 UMX (fixed ratio)
+ |
+UMX  Ł  — spend, payments, velocity
+```
+
+**NEX is gravity. UMX is NEX in motion.**
+
+Value rests in NEX, moves through UMX (wrapped NEX on the fast layer), and returns to NEX. This is not two competing currencies. It is one monetary system with two functional states. Every UMX in existence has a NEX locked behind it.
+
+| Role | NEX | UMX |
+|---|---|---|
+| Identity | Reserve asset | **Wrapped NEX on Lumero/CORE** |
+| Purpose | Reserve, settlement, savings | Payments, spend, merchant liquidity |
+| Layer | NEX base chain (PoW) | Lumero / CORE (DAG) |
+| Speed | 5-minute blocks | ~200ms finality |
+| Symbol | ₿ | Ł (Lumero) |
+| Display | 8 decimal places | Up to 3 decimals (8 internal) |
+| Bias | Long-term hold | Short-term spend |
+| Issuance | PoW mining + premine | **Bridge-only — locked NEX backs every UMX** |
 
 ---
 
 ## Monetary Policy
+
+### Supply
 
 | Parameter | Value |
 |---|---|
@@ -24,6 +53,15 @@ NEX is a Bitcoin-derived base chain paired with **Lumero**, a DAG-based instant 
 | **Mining ends** | ~2050 |
 | **Mining algorithm** | SHA-256d (Bitcoin-compatible hardware) |
 | **Difficulty retarget** | Every 2,016 blocks (~7 days) |
+
+### Conversion Ratio
+
+**1 NEX = 1,000 UMX** (fixed, published)
+
+- 1 UMX = 0.001 NEX
+- At 8-decimal internal precision: 1 UMX = 100,000 raw NEX units
+- Retail prices denominated in UMX (human-friendly sizing)
+- Reserve balances denominated in NEX
 
 ### Emission Schedule
 
@@ -49,7 +87,7 @@ Halving 6:  ~2047    3.4375 → 1.71875
 Halving 7:  ~2050    1.71875 → 0 (mining ends)
 ```
 
-76% of all mineable NEX is distributed by 2033. Early miners are rewarded. Scarcity accelerates with each halving.
+7 halvings. 7 supercycles. 76% distributed by 2033.
 
 ---
 
@@ -62,12 +100,118 @@ Halving 7:  ~2050    1.71875 → 0 (mining ends)
 | Protocol Treasury | 10,000,000 NEX | Governance-locked, multi-sig controlled |
 | Ecosystem Fund | 4,000,000 NEX | Grants, liquidity, partnerships |
 | Team | 3,000,000 NEX | 4-year linear vest, 1-year cliff |
-| Bridge Reserve | 2,000,000 NEX | NEX-Lumero bridge collateral |
+| Bridge Reserve | 2,000,000 NEX | NEX-UMX bridge collateral |
 | Mining Incentive | 1,500,000 NEX | Early miner bonuses, testnet rewards |
 | Security Fund | 1,000,000 NEX | Audits, bug bounties, insurance |
 | Community Airdrop | 500,000 NEX | Early adopters and contributors |
 
-All genesis addresses published. All vesting schedules enforced on-chain. No hidden issuance.
+All genesis addresses published. All vesting schedules enforced on-chain.
+
+---
+
+## Reserve Invariant
+
+The bridge maintains a public, non-negotiable monetary invariant:
+
+> **Locked NEX on the reserve side must equal issued UMX value on the transaction side, at the 1:1000 conversion ratio.**
+
+- Every 1 NEX locked in reserve authorizes issuance of 1,000 UMX on Lumero
+- Every 1,000 UMX redeemed destroys that amount and releases 1 NEX back to reserve
+- Reserve data is published: lock addresses, total bridged NEX, total issued UMX, all mint/burn events
+
+### Non-Negotiable Backing Rule
+
+UMX may only be created through one of these paths:
+- **Lock of NEX into the bridge reserve** (production)
+- **Explicit genesis/testnet issuance** (marked as non-production, auditable)
+
+UMX must not be issued as an unrelated floating asset. No unbacked minting. No fractional reserve. The bridge is a 1:1 lock/mint mechanism, not a lending facility.
+
+---
+
+## Bridge Model
+
+### NEX → UMX (Convert Into Velocity)
+
+Fast, low-friction, encouraged. This wraps NEX into spendable form.
+
+```
+1. User chooses to move value from reserve into spend
+2. NEX is locked on the NEX chain to a published bridge address
+3. Bridge verifies required confirmations (6 blocks = 30 min)
+4. 1,000 UMX per NEX is minted (wrapped) on Lumero (CORE)
+5. User's KnexPay spend balance increases
+```
+
+### UMX → NEX (Return to Gravity)
+
+Always available, more disciplined. This unwraps UMX back into NEX.
+
+```
+1. User chooses to move value from spend into reserve
+2. UMX is burned (unwrapped) on Lumero (CORE)
+3. Bridge verifies finality
+4. Equivalent NEX released from reserve (UMX / 1000)
+5. User's KnexPay reserve balance increases
+```
+
+### Bridge Controls
+
+- Permissioned signer set with multi-sig threshold
+- Delayed large withdrawals
+- Reserve accounting published on both chains
+- Audit logging for every mint/burn event
+- UMX minting restricted to bridge contract only (no controller expansion)
+- Evolves toward decentralization as network matures
+
+---
+
+## Wallet Policy (KnexPay)
+
+KnexPay presents the monetary system as two coordinated balances:
+
+```
+┌─────────────────────────┐
+│  Reserve Balance (NEX)  │ ← primary, gravity
+│  ₿ 1,250.00            │
+├─────────────────────────┤
+│  Spend Balance (UMX)    │ ← secondary, velocity
+│  Ł 150.000             │
+└─────────────────────────┘
+```
+
+### Automatic Spend Float
+
+Users define a UMX operating float:
+
+| Control | Example | Behavior |
+|---|---|---|
+| Minimum spend threshold | 50 UMX | Top up from reserve when below |
+| Target spend balance | 150 UMX | Auto-refill target |
+| Maximum spend float | 300 UMX | Sweep excess back to NEX |
+
+This makes UMX behave like a checking account fed by a savings account.
+
+### Default Wallet Bias
+
+- Portfolio summary emphasizes NEX reserve
+- Net worth displayed in NEX
+- UMX presented as available spending balance
+- Sweep-to-reserve enabled by default
+- Prices shown in UMX for daily use, NEX equivalent visible
+
+---
+
+## Merchant Policy
+
+Merchants are the strongest enforcement of monetary gravity.
+
+- Accept UMX instantly at point of sale
+- Hold configurable UMX working float (e.g., 2,000 UMX)
+- Excess automatically swept to NEX on schedule (hourly, 6h, daily)
+- Treasury reports in NEX
+
+**UMX = cash register. NEX = vault.**
 
 ---
 
@@ -88,34 +232,46 @@ Address prefix:      N (mainnet), n (testnet)
 Network magic:       0x4e, 0x45, 0x58, 0x01 ("NEX" + version)
 ```
 
-### Why SHA-256d
+### UMX Parameters (on Lumero/CORE)
 
-Existing Bitcoin mining hardware works on NEX from day one. No new ASICs needed. Miners can point hashrate at whichever chain is more profitable. This gives NEX immediate security from the global SHA-256 mining ecosystem.
-
-### Why 5-minute blocks
-
-NEX is a settlement chain, not a speed layer — that's Lumero's job. But 5-minute blocks are fast enough for on-chain confirmation while maintaining security margins for proof-of-work.
+```
+Token ID:            1001
+Symbol:              Ł (U+0141)
+Ticker:              UMX
+Ledger precision:    8 decimal places
+Display precision:   3 decimal places (up to)
+Conversion:          1 NEX = 1,000 UMX
+Tax:                 0.50% (50 basis points) on UMX transactions
+```
 
 ---
 
 ## Architecture
 
 ```
-NEX (base chain)
- |
- |  ← permissioned bridge (lock/mint, burn/release)
- |
-Lumero (DAG payment layer)
- |
- |  ← WebSocket events, instant settlement
- |
+NEX (base chain — PoW settlement)
+ │
+ │  ← permissioned bridge (lock NEX / mint UMX, burn UMX / release NEX)
+ │     1 NEX = 1,000 UMX (fixed ratio)
+ │     reserve invariant enforced
+ │
+Lumero / CORE (DAG payment layer)
+ │  ├── UMX token (ID 1001) — spend unit
+ │  ├── KNEX native — validator staking, governance
+ │  ├── NFC tap-to-pay (CMAC verified)
+ │  └── WebSocket realtime events
+ │
 KnexPay (iOS wallet)
+    ├── Reserve balance (NEX)
+    ├── Spend balance (UMX)
+    ├── Auto top-up / auto sweep
+    └── Dual-balance display
 ```
 
 ### NEX — Settlement Layer
 
 - Bitcoin-derived PoW chain
-- 100M fixed supply
+- 100M fixed supply, 7 halvings, SHA-256d
 - Final ownership and reserve asset
 - Conservative, auditable, simple
 
@@ -126,7 +282,7 @@ KnexPay (iOS wallet)
 - 2/3 BFT validator finalization (~100-300ms)
 - Theoretical throughput: ~100,000 TPS
 - NFC tap-to-pay with SUN/SDM CMAC verification
-- Transaction tax: 0.07% (7 basis points)
+- UMX transaction tax: 0.50% (50 BPS)
 
 ### KnexPay — Consumer Wallet
 
@@ -134,24 +290,8 @@ KnexPay (iOS wallet)
 - Wallet keys in iOS Keychain (biometric-protected)
 - NFC card self-provisioning on iPhone
 - Real-time balance updates via WebSocket
-- FoLR (Fold, Lock, Recover) key backup to NTAG 424 DNA chips
-
----
-
-## Bridge Model
-
-The NEX-Lumero bridge is **permissioned first** — operated by a known signer set with multi-sig controls.
-
-**Deposit flow:** Lock NEX on base chain → Bridge observes → Mint equivalent Lumero value
-**Withdrawal flow:** Burn Lumero → Bridge observes → Release NEX from lock
-
-Controls:
-- Multi-sig threshold signing
-- Delayed large withdrawals
-- Reserve accounting published on-chain
-- Audit logging
-
-The bridge trust model is documented separately and will evolve toward decentralization as the network matures.
+- Dual-balance UX (reserve NEX + spend UMX)
+- Auto top-up and auto sweep between layers
 
 ---
 
@@ -191,21 +331,29 @@ The bridge trust model is documented separately and will evolve toward decentral
 | Post-quantum crypto | Complete — ML-DSA-65 on all signatures |
 | KnexPay iOS wallet | Implemented — provisioning, tap-to-pay, realtime settle |
 | NFC CMAC verification | Complete — end-to-end SDM key flow |
-| Bridge architecture | Design phase |
+| NEX-UMX bridge | Design complete, implementation next |
+| Monetary policy | Defined — wrapped NEX model, 1:1000 ratio, non-negotiable backing |
 
 ---
 
-## Why Fork Bitcoin
+## Rollout
 
-Bitcoin solved money issuance. A fork acknowledges that breakthrough while pursuing a different path.
+### Phase 1 — Foundation
+- Launch NEX testnet (regtest)
+- Launch CORE testnet
+- Manual convert-in / convert-out
+- Visible dual balances in KnexPay
 
-NEX uses that freedom to:
-- Define a new monetary policy (100M supply, 7 halvings, 2050 end)
-- Pair a PoW settlement chain with a quantum-safe payment layer
-- Ship a real consumer wallet with NFC tap-to-pay
-- Build a system designed around usable finality, not just scarcity
+### Phase 2 — Automation
+- Auto top-up from NEX to UMX
+- Auto sweep from UMX to NEX
+- Merchant reserve settlement policies
 
-A fork is not a rejection. It is a continuation.
+### Phase 3 — Maturity
+- Treasury dashboards
+- Reserve proofs
+- Public invariant reporting
+- Optimized wallet defaults around reserve discipline
 
 ---
 
@@ -215,7 +363,7 @@ A fork is not a rejection. It is a continuation.
 2. **Speed where it matters.** Users should not wait an arbitrary time to make an ordinary payment.
 3. **Self-custody first.** A system dependent on custodians recreates the old model under new branding.
 4. **Verifiability over slogans.** Claims should be inspectable in code, supply, reserves, and settlement behavior.
-5. **No confusion between money and transport.** NEX is the monetary base. Lumero is the payment rail. The distinction stays clear.
+5. **No confusion between money and transport.** NEX is the monetary base. UMX is the payment rail. The distinction stays clear.
 
 ---
 
@@ -229,10 +377,8 @@ src/                    # Bitcoin Core C++ source (NEX-modified)
   net/                  # P2P networking
   wallet/               # Wallet functionality
   rpc/                  # JSON-RPC interface
-  qt/                   # Qt GUI (optional)
 doc/                    # Documentation
 test/                   # Functional and unit tests
-contrib/                # Build helpers, packaging
 ```
 
 ---
@@ -246,8 +392,8 @@ Useful contributions include:
 - Genesis block verification
 - Wallet and node testing
 - Security analysis
-- Documentation
 - Bridge architecture design
+- Monetary policy review
 
 ---
 
@@ -280,8 +426,8 @@ all copies or substantial portions of the Software.
 
 ---
 
-## Closing
+## Final Monetary Rule
 
-A monetary system should not only be scarce. It should also be usable.
+> **Value rests in NEX, moves through wrapped NEX as UMX, and returns to NEX.**
 
-NEX exists to continue that work.
+NEX is gravity. UMX is NEX in motion. KnexPay orchestrates both.
