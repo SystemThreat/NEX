@@ -1838,6 +1838,12 @@ PackageMempoolAcceptResult ProcessNewPackage(Chainstate& active_chainstate, CTxM
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
+    // NEX: Block 1 is the premine block (13,000,000 NEX)
+    // This is a one-time allocation for team, treasury, and ecosystem
+    if (nHeight == 1) {
+        return 1300000000000000LL;  // 13,000,000 * COIN
+    }
+
     int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
     // Force block reward to zero when right shift is undefined.
     if (halvings >= 64)

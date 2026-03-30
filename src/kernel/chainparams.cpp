@@ -102,8 +102,13 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].threshold = 1815; // 90%
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].period = 2016;
 
-        consensus.nMinimumChainWork = uint256{};
-        consensus.defaultAssumeValid = uint256{};
+        // NEX: Bootstrap values — set after chain has sufficient depth.
+        // After 1000+ blocks: run `nex-cli getblockchaininfo` and update:
+        //   nMinimumChainWork = chainwork value from a trusted block
+        //   defaultAssumeValid = hash of a trusted block (e.g., block 1000)
+        // For genesis launch, zeros are acceptable — nodes verify everything from genesis.
+        consensus.nMinimumChainWork = uint256{};  // SET AFTER CHAIN DEPTH > 1000
+        consensus.defaultAssumeValid = uint256{}; // SET AFTER CHAIN DEPTH > 1000
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -121,33 +126,52 @@ public:
 
         genesis = CreateGenesisBlock(1711756800, 0, 0x2000ffff, 1, 95 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        // NEX: genesis hash computed dynamically — asserts disabled for new chain
-        // assert(consensus.hashGenesisBlock == uint256{"000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"});
-        // assert(genesis.hashMerkleRoot == uint256{"4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"});
+        assert(consensus.hashGenesisBlock == uint256{"658aac271907e651f3e742ac3c090a4daa6500b752cc597930d5cecbd27d3d0c"});
+        assert(genesis.hashMerkleRoot == uint256{"6b57f114d76f9647dd4c202fc9e1a4bc4d0f174b3dc061d7e93df9316a8bb2ea"});
 
         // Note that of those which support the service bits prefix, most only support a subset of
         // possible options.
         // This is fine at runtime as we'll fall back to using them as an addrfetch if they don't support the
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
-        vSeeds.clear();
+        // NEX seed nodes — initial bootstrap
+        vSeeds.emplace_back("seed1.nex.network");
+        vSeeds.emplace_back("seed2.nex.network");
+        // Fallback direct IP (primary VPS)
+        vSeeds.emplace_back("198.252.104.24");
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,53);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,55);  // NEX: 'M' prefix for P2SH
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,181);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x4E, 0x58, 0x50};  // NEX: "nxpb" serialization
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x4E, 0x58, 0x53};  // NEX: "nxpv" serialization
 
         bech32_hrp = "nx";
 
-        vFixedSeeds.clear();
+        // NEX fixed seed nodes (BIP155 format: networkID, addr, port)
+        // Used as fallback when DNS seeds are unreachable.
+        // Format: 0x01 = IPv4, then 4 address bytes, then 2-byte big-endian port
+        static const uint8_t nex_seed_main[] = {
+            0x01, 0xc6,0xfc,0x68,0x18, 0x24,0x75,  // 198.252.104.24:9333 (primary VPS — Virginia)
+        };
+        vFixedSeeds = std::vector<uint8_t>(std::begin(nex_seed_main), std::end(nex_seed_main));
 
         fDefaultConsistencyChecks = false;
         m_is_mockable_chain = false;
 
         m_assumeutxo_data = {};
 
-        chainTxData = ChainTxData{0, 0, 0};
+        // NEX: Bootstrap values — set after chain has sufficient depth.
+        // After 1000+ blocks: run `nex-cli getblockchaininfo` and update:
+        //   nMinimumChainWork = chainwork value from a trusted block
+        //   defaultAssumeValid = hash of a trusted block (e.g., block 1000)
+        // After 10000+ blocks: populate chainTxData with real statistics.
+        // For genesis launch, zeros are acceptable — nodes verify everything from genesis.
+        chainTxData = ChainTxData{
+            0,    // nTime — SET to timestamp of a recent trusted block
+            0,    // nTxCount — SET to total tx count at that block
+            0,    // dTxRate — SET to average tx/second over recent history
+        };
     }
 };
 
@@ -203,10 +227,10 @@ public:
         vSeeds.clear();
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,57);   // NEX testnet P2SH
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x4E, 0x54, 0x50};  // NEX testnet: "tNXP" serialization
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x4E, 0x54, 0x53};  // NEX testnet: "tNXS" serialization
 
         bech32_hrp = "tnx";
 

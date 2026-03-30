@@ -52,7 +52,7 @@ Value rests in NEX, moves through UMX (wrapped NEX on the fast layer), and retur
 | **Number of halvings** | 7 |
 | **Mining ends** | ~2050 |
 | **Mining algorithm** | SHA-256d (Bitcoin-compatible hardware) |
-| **Difficulty retarget** | Every 2,016 blocks (~7 days) |
+| **Difficulty retarget** | Every 50 blocks (~4.2 hours at 5-min block target) |
 
 ### Conversion Ratio
 
@@ -232,7 +232,7 @@ Block time:          300 seconds (5 minutes)
 Halving interval:    360,000 blocks
 Initial reward:      95 NEX
 Mining algorithm:    SHA-256d (double SHA-256)
-Difficulty adjust:   2,016 blocks (~7 days)
+Difficulty adjust:   50 blocks (~4.2 hours)
 Default P2P port:    9333
 Default RPC port:    9332
 Address prefix:      N (mainnet), n (testnet)
@@ -306,7 +306,7 @@ KnexPay (iOS wallet)
 
 ### NEX (base chain)
 - SHA-256d proof-of-work (same security model as Bitcoin)
-- 7-day difficulty retarget
+- 50-block difficulty retarget (~4.2 hours)
 - Full node verification
 
 ### Lumero (payment layer)
