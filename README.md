@@ -1,5 +1,8 @@
 # NEX
 
+*Last updated: 2026-04-05 — mainnet live, chain at block 470+, 100% PQ consensus enforced*
+
+
 ## A peer-to-peer electronic cash system with a fast transaction rail
 
 NEX is a Bitcoin-derived base chain paired with **Lumero**, a DAG-based instant payment layer.
