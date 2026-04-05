@@ -311,7 +311,7 @@ NEX (base chain — PoW settlement)
  │
 Lumero / CORE (DAG payment layer)
  │  ├── UMX token (ID 1001) — spend unit
- │  ├── KNEX native — validator staking, governance
+ │  ├── NEX reserve-locked (backs every UMX 1:1000)
  │  ├── NFC tap-to-pay (CMAC verified)
  │  └── WebSocket realtime events
  │
@@ -402,31 +402,47 @@ Result: NEX is 100% post-quantum from genesis. No ECDSA-secured coins can exist 
 
 | Component | Status |
 |---|---|
-| NEX base chain | Genesis and chain params in progress |
-| Lumero DAG ledger | Implemented — 2,899 tests passing |
-| Fortress hardening | Complete — atomic writes, validator whitelist, 2/3 BFT |
-| Post-quantum crypto | Complete — ML-DSA-65 on all signatures |
+| NEX base chain | **Live — mainnet launched 2026-04-05, genesis `00000000ca67...45d66b`** |
+| Post-quantum consensus | Complete — `WITNESS_V2_PQ` + ML-DSA-65 enforced at consensus |
+| Legacy script rejection | Complete — ECDSA/Schnorr outputs refused by nodes |
+| Block 1 premine delivery | Complete — 20M NEX paid via coinbase subsidy bonus |
+| Stratum pool (solo) | Live — `stratum+tcp://<pool-host>:3333`, vardiff enabled |
+| Block explorer | Live — untraceablex.com |
+| Lumero DAG ledger | Implemented — fortress-hardened, 2/3 BFT |
+| Post-quantum crypto (Lumero) | Complete — ML-DSA-65 on all signatures |
 | KnexPay iOS wallet | Implemented — provisioning, tap-to-pay, realtime settle |
 | NFC CMAC verification | Complete — end-to-end SDM key flow |
 | NEX-UMX bridge | Design complete, implementation next |
-| Monetary policy | Defined — wrapped NEX model, 1:1000 ratio, non-negotiable backing |
+| BTC UTXO snapshot claims | In progress — snapshot at BTC block 940,000 |
 
 ---
 
 ## Rollout
 
-### Phase 1 — Foundation
-- Launch NEX testnet (regtest)
-- Launch CORE testnet
-- Manual convert-in / convert-out
-- Visible dual balances in KnexPay
+### Phase 1 — Foundation ✓ COMPLETE
+- ✓ NEX mainnet launched (2026-04-05, genesis block mined)
+- ✓ Post-quantum consensus rule enforced
+- ✓ Solo mining pool live with vardiff
+- ✓ Block explorer live (untraceablex.com)
 
-### Phase 2 — Automation
+### Phase 2 — Distribution (in progress)
+- Block 1 premine mined → 9-account distribution executed
+- BTC snapshot claims activated (merkle root set in consensus)
+- CLI wallet with full ML-DSA-65 signing
+- Public seed nodes + DNS peer discovery
+
+### Phase 3 — Payments Layer
+- Lumero CORE testnet launch
+- Manual NEX → UMX convert-in / convert-out
+- Dual balances in KnexPay
+- NFC tap-to-pay end-to-end
+
+### Phase 4 — Automation
 - Auto top-up from NEX to UMX
 - Auto sweep from UMX to NEX
 - Merchant reserve settlement policies
 
-### Phase 3 — Maturity
+### Phase 5 — Maturity
 - Treasury dashboards
 - Reserve proofs
 - Public invariant reporting
