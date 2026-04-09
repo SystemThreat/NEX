@@ -1,0 +1,336 @@
+#!/usr/bin/env python3
+"""
+NEX Wallet CLI — Post-Quantum Self-Custody Wallet
+Connects to local nexd node via RPC. Node handles ML-DSA-65 signing.
+
+Commands:
+  balance    Show wallet balance
+  address    Show current receive address
+  new        Generate new receive address
+  send       Send NEX to an address
+  history    Show recent transactions
+  addresses  List all addresses with balances
+  info       Show node and wallet status
+  help       Show this help
+"""
+
+import json
+import urllib.request
+import urllib.error
+import sys
+import os
+
+# ── Config ──
+# Local node (fallback)
+LOCAL_URL = 'http://127.0.0.1:9332'
+# Remote node (primary — your AWS server)
+REMOTE_URL = 'http://98.80.98.17:19332'
+
+RPC_USER = 'nex'
+RPC_PASS = '6c41e991419bef293d9910243a188fc2'
+WALLET = 'cli-watch'
+
+# Auto-detect: try remote first, fall back to local
+def detect_node():
+    for url in [REMOTE_URL, LOCAL_URL]:
+        try:
+            import base64
+            auth = base64.b64encode(f"{RPC_USER}:{RPC_PASS}".encode()).decode()
+            req = urllib.request.Request(url,
+                data=json.dumps({'jsonrpc':'1.0','id':'ping','method':'getblockchaininfo','params':[]}).encode(),
+                headers={'Content-Type':'application/json','Authorization':f'Basic {auth}'})
+            urllib.request.urlopen(req, timeout=3)
+            return url
+        except:
+            continue
+    return LOCAL_URL
+
+RPC_URL = None  # set at startup
+
+# Colors
+G = '\033[32m'    # green
+C = '\033[36m'    # cyan
+R = '\033[31m'    # red
+Y = '\033[33m'    # yellow
+D = '\033[90m'    # dim
+B = '\033[1m'     # bold
+X = '\033[0m'     # reset
+
+def rpc(method, params=None):
+    """Call NEX node RPC."""
+    url = f"{RPC_URL}/wallet/{WALLET}" if WALLET else RPC_URL
+    body = json.dumps({
+        'jsonrpc': '1.0',
+        'id': 'cli',
+        'method': method,
+        'params': params or []
+    }).encode()
+
+    import base64
+    auth = base64.b64encode(f"{RPC_USER}:{RPC_PASS}".encode()).decode()
+
+    req = urllib.request.Request(url, data=body, headers={
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {auth}'
+    })
+
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+            if data.get('error'):
+                raise Exception(data['error'].get('message', str(data['error'])))
+            return data['result']
+    except urllib.error.HTTPError as e:
+        body = json.loads(e.read())
+        if body.get('error', {}).get('code') == -18:
+            # No wallet loaded — create/load it
+            try:
+                raw_rpc('loadwallet', [WALLET])
+            except:
+                raw_rpc('createwallet', [WALLET])
+            return rpc(method, params)
+        raise Exception(body.get('error', {}).get('message', f'HTTP {e.code}'))
+    except urllib.error.URLError as e:
+        raise Exception(f'Cannot connect to node at {RPC_URL}\n  Is nexd running?')
+
+def raw_rpc(method, params=None):
+    """Direct RPC call without wallet path."""
+    body = json.dumps({'jsonrpc': '1.0', 'id': 'cli', 'method': method, 'params': params or []}).encode()
+    import base64
+    auth = base64.b64encode(f"{RPC_USER}:{RPC_PASS}".encode()).decode()
+    req = urllib.request.Request(RPC_URL, data=body, headers={
+        'Content-Type': 'application/json',
+        'Authorization': f'Basic {auth}'
+    })
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        data = json.loads(resp.read())
+        if data.get('error'):
+            raise Exception(data['error'].get('message', ''))
+        return data['result']
+
+def fmt(amount):
+    """Format NEX amount."""
+    return f"{float(amount):.8f}"
+
+# ── Commands ──
+
+def cmd_balance():
+    bal = rpc('getbalance')
+    try:
+        wi = rpc('getwalletinfo')
+        unconfirmed = wi.get('unconfirmed_balance', 0)
+        immature = wi.get('immature_balance', 0)
+    except:
+        unconfirmed = immature = 0
+
+    print(f"""
+  {B}NEX WALLET{X}
+  {'─' * 40}
+  {D}Available{X}     {G}{B}{fmt(bal)}{X} {G}NEX{X}""")
+    if unconfirmed:
+        print(f"  {D}Unconfirmed{X}   {Y}+{fmt(unconfirmed)}{X} NEX")
+    if immature:
+        print(f"  {D}Immature{X}      {C}{fmt(immature)}{X} NEX")
+    print(f"  {'─' * 40}")
+
+def cmd_address():
+    addrs = rpc('listreceivedbyaddress', [0, True])
+    if addrs:
+        addr = addrs[-1]['address']
+    else:
+        addr = rpc('getnewaddress', ['', 'bech32m'])
+    print(f"""
+  {D}Receive Address:{X}
+  {G}{B}{addr}{X}
+""")
+
+def cmd_new():
+    addr = rpc('getnewaddress', ['', 'bech32m'])
+    print(f"""
+  {D}New Address Generated:{X}
+  {G}{B}{addr}{X}
+""")
+
+def cmd_send():
+    if len(sys.argv) < 4:
+        print(f"\n  {R}Usage:{X} nex-wallet send <address> <amount>")
+        print(f"  {D}Example:{X} nex-wallet send nex1z... 3.0\n")
+        return
+
+    to_addr = sys.argv[2]
+    try:
+        amount = float(sys.argv[3])
+    except ValueError:
+        print(f"\n  {R}Invalid amount:{X} {sys.argv[3]}\n")
+        return
+
+    if not to_addr.startswith('nex1'):
+        print(f"\n  {R}Invalid address:{X} must start with nex1\n")
+        return
+
+    if amount <= 0:
+        print(f"\n  {R}Amount must be positive{X}\n")
+        return
+
+    # Confirm
+    print(f"""
+  {B}CONFIRM TRANSACTION{X}
+  {'─' * 40}
+  {D}To:{X}      {to_addr}
+  {D}Amount:{X}  {G}{fmt(amount)}{X} NEX
+  {'─' * 40}""")
+
+    confirm = input(f"\n  Send? (yes/no): ").strip().lower()
+    if confirm not in ('yes', 'y'):
+        print(f"\n  {Y}Cancelled.{X}\n")
+        return
+
+    try:
+        txid = rpc('sendtoaddress', [to_addr, amount])
+        print(f"""
+  {G}✓ Sent!{X}
+  {D}TX:{X} {txid}
+""")
+    except Exception as e:
+        print(f"\n  {R}Failed:{X} {e}\n")
+
+def cmd_history():
+    txs = rpc('listtransactions', ['*', 20, 0])
+    if not txs:
+        print(f"\n  {D}No transactions yet.{X}\n")
+        return
+
+    print(f"\n  {B}RECENT TRANSACTIONS{X}")
+    print(f"  {'─' * 60}")
+    for tx in reversed(txs):
+        cat = tx.get('category', '?')
+        amt = tx.get('amount', 0)
+        confs = tx.get('confirmations', 0)
+        addr = tx.get('address', tx.get('txid', '?')[:24] + '...')
+
+        if cat in ('receive', 'generate', 'immature'):
+            color = G
+            sign = '+'
+            label = 'Mined' if cat == 'generate' else 'Immature' if cat == 'immature' else 'Recv'
+        else:
+            color = R
+            sign = ''
+            label = 'Sent'
+
+        import time
+        ts = time.strftime('%b %d %H:%M', time.localtime(tx.get('time', 0))) if tx.get('time') else '—'
+
+        print(f"  {D}{ts}{X}  {label:<8} {color}{sign}{fmt(amt)}{X} NEX  {D}{confs} conf  {addr[:32]}...{X}")
+
+    print(f"  {'─' * 60}\n")
+
+def cmd_addresses():
+    addrs = rpc('listreceivedbyaddress', [0, True])
+    if not addrs:
+        print(f"\n  {D}No addresses yet. Run: nex-wallet new{X}\n")
+        return
+
+    print(f"\n  {B}ADDRESSES{X}")
+    print(f"  {'─' * 70}")
+    for a in addrs:
+        bal = float(a.get('amount', 0))
+        color = G if bal > 0 else D
+        print(f"  {color}{a['address']}{X}")
+        print(f"    {D}{fmt(bal)} NEX · {a.get('confirmations', 0)} confs · {len(a.get('txids', []))} txs{X}")
+    print(f"  {'─' * 70}\n")
+
+def cmd_info():
+    try:
+        chain = raw_rpc('getblockchaininfo')
+        net = raw_rpc('getnetworkinfo')
+        wi = rpc('getwalletinfo')
+        mining = raw_rpc('getmininginfo')
+    except Exception as e:
+        print(f"\n  {R}Error:{X} {e}\n")
+        return
+
+    peers = net.get('connections', 0)
+    synced = not chain.get('initialblockdownload', True)
+
+    print(f"""
+  {B}NEX NODE STATUS{X}
+  {'─' * 40}
+  {D}Chain{X}        {chain['chain']}
+  {D}Block{X}        {chain['blocks']:,}
+  {D}Headers{X}      {chain['headers']:,}
+  {D}Difficulty{X}   {chain['difficulty']}
+  {D}Peers{X}        {peers}
+  {D}Synced{X}       {G + 'Yes' if synced else Y + 'Syncing...'}{X}
+  {D}Hash{X}         {chain['bestblockhash'][:24]}...
+  {'─' * 40}
+  {B}WALLET{X}
+  {D}Name{X}         {wi.get('walletname', '?')}
+  {D}Format{X}       {wi.get('format', '?')}
+  {D}TX Count{X}     {wi.get('txcount', 0)}
+  {D}Keypool{X}      {wi.get('keypoolsize', 0)}
+  {D}Signature{X}    ML-DSA-65 (FIPS 204)
+  {D}Address{X}      bech32m (nex1z...)
+  {'─' * 40}
+""")
+
+def cmd_help():
+    print(f"""
+  {G}{B}NEX WALLET CLI{X} — Post-Quantum Wallet
+  {'─' * 40}
+  {B}balance{X}     Show wallet balance
+  {B}address{X}     Show current receive address
+  {B}new{X}         Generate new receive address
+  {B}send{X}        Send NEX  {D}(send <addr> <amount>){X}
+  {B}history{X}     Show recent transactions
+  {B}addresses{X}   List all addresses
+  {B}info{X}        Node and wallet status
+  {B}help{X}        This help
+  {'─' * 40}
+  {D}Node: {RPC_URL}  Wallet: {WALLET}{X}
+""")
+
+# ── Main ──
+def main():
+    global RPC_URL
+    if len(sys.argv) < 2:
+        cmd_help()
+        return
+
+    cmd = sys.argv[1].lower()
+
+    # Detect which node to use
+    print(f"  {D}Connecting...{X}", end='', flush=True)
+    RPC_URL = detect_node()
+    source = 'remote' if RPC_URL == REMOTE_URL else 'local'
+    print(f"\r  {D}Node: {RPC_URL} ({source}){X}{'':20}")
+    commands = {
+        'balance': cmd_balance,
+        'bal': cmd_balance,
+        'address': cmd_address,
+        'addr': cmd_address,
+        'new': cmd_new,
+        'send': cmd_send,
+        'history': cmd_history,
+        'hist': cmd_history,
+        'tx': cmd_history,
+        'addresses': cmd_addresses,
+        'addrs': cmd_addresses,
+        'info': cmd_info,
+        'status': cmd_info,
+        'help': cmd_help,
+        '-h': cmd_help,
+        '--help': cmd_help,
+    }
+
+    fn = commands.get(cmd)
+    if fn:
+        try:
+            fn()
+        except Exception as e:
+            print(f"\n  {R}Error:{X} {e}\n")
+    else:
+        print(f"\n  {R}Unknown command:{X} {cmd}")
+        cmd_help()
+
+if __name__ == '__main__':
+    main()
