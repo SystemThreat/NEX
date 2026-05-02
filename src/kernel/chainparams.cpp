@@ -228,11 +228,9 @@ public:
         // This is fine at runtime as we'll fall back to using them as an addrfetch if they don't support the
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
-        // NEX seed nodes — initial bootstrap
-        vSeeds.emplace_back("seed1.nex.network");
-        vSeeds.emplace_back("seed2.nex.network");
-        // Fallback direct IP (primary VPS)
-        vSeeds.emplace_back("198.252.104.24");
+        // NEX seed nodes — initial bootstrap (DNS A records on knexcoin.com point at production peer IPs)
+        vSeeds.emplace_back("seed.knexcoin.com");
+        vSeeds.emplace_back("seed2.knexcoin.com");
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,53);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,55);  // NEX: 'M' prefix for P2SH
