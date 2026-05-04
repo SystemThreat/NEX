@@ -463,16 +463,114 @@ Result: NEX is 100% post-quantum from genesis. No ECDSA-secured coins can exist 
 
 ---
 
+## Running a Node
+
+Anyone can run a NEX node and replicate the ledger. The chain bootstraps automatically via DNS — no manual peer configuration required.
+
+### Build from source (Ubuntu 22.04 / 24.04)
+
+```bash
+# Dependencies
+sudo apt update
+sudo apt install -y build-essential cmake pkg-config libssl-dev libevent-dev \
+                    libboost-all-dev libsqlite3-dev libdb-dev libdb++-dev \
+                    libzmq3-dev git
+
+# Clone + build
+git clone https://github.com/SystemThreat/NEX.git
+cd NEX
+cmake -B build
+cmake --build build -j$(nproc)
+
+# Resulting binaries
+ls build/bin/  # nexd, nex-cli, nex-wallet, nex-tx, bitcoin-util
+```
+
+Build time is ~10–20 min on a 4-core box.
+
+### Run
+
+```bash
+mkdir -p ~/.nex
+cat > ~/.nex/nex.conf <<EOF
+rpcuser=nex
+rpcpassword=$(openssl rand -hex 32)
+rpcallowip=127.0.0.1
+server=1
+listen=1
+txindex=1
+EOF
+
+build/bin/nexd -daemon
+```
+
+The node will:
+
+1. Resolve `seed.knexcoin.com` to find the current peer set.
+2. Connect, sync block headers, then download blocks.
+3. Validate every block from genesis (full validation; no trusted snapshot).
+
+Sync time depends on chain size — at the time of writing the chain is ~9,300 blocks; full sync takes minutes, not days. Verify status:
+
+```bash
+build/bin/nex-cli getblockchaininfo
+build/bin/nex-cli getconnectioncount
+```
+
+### Run as a systemd service (production)
+
+```ini
+# /etc/systemd/system/nexd.service
+[Unit]
+Description=NEX full node
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=ubuntu
+ExecStart=/usr/local/bin/nexd -daemon -conf=/home/ubuntu/.nex/nex.conf
+ExecStop=/usr/local/bin/nex-cli -conf=/home/ubuntu/.nex/nex.conf stop
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now nexd
+```
+
+### Network bootstrap — how peer discovery works
+
+NEX uses a single DNS seed: **`seed.knexcoin.com`**.
+
+The A records for that name resolve to the current peer set. When IPs change (cloud migration, adding peers, removing peers), only the DNS records change — no recompile, no fork, no protocol bump. Your node picks up the new peers on next startup or after `addnode <ip> add` via RPC.
+
+If you want to pin a specific peer, add `connect=<ip>:9333` lines to `~/.nex/nex.conf`. Don't combine `connect=` and the DNS seed — `connect=` overrides discovery.
+
+### Running a mining pool (optional)
+
+The `pool/nex_pool.py` script in this repo is a Stratum v1 implementation supporting both PPLNS (port 3333) and solo (port 7777) modes. It reads its configuration from environment variables — see the script's header for the full list. **No address is hardcoded**: each miner authorizes with their own NEX payout address and gets credited individually.
+
+---
+
 ## Repository Structure
 
 ```
 src/                    # Bitcoin Core C++ source (NEX-modified)
-  consensus/            # Consensus rules, validation
-  kernel/               # Chain parameters, genesis
-  crypto/               # SHA-256d, key derivation
+  consensus/            # Consensus rules, validation (LWMA v2 + EDA)
+  kernel/               # Chain parameters, genesis, DNS seed
+  crypto/               # SHA-256d, ML-DSA-65 (post-quantum), key derivation
   net/                  # P2P networking
+  script/               # Witness v2 (Path A: ML-DSA-65, Path B: seed-spend)
   wallet/               # Wallet functionality
   rpc/                  # JSON-RPC interface
+pool/                   # Optional Stratum mining pool (PPLNS + solo)
+wallet/                 # KnexPay browser/PWA wallet (separate from src/wallet/)
 doc/                    # Documentation
 test/                   # Functional and unit tests
 ```
