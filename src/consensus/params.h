@@ -194,6 +194,10 @@ struct Params {
     bool fPowNoRetargeting;
     int64_t nPowTargetSpacing;
     int64_t nPowTargetTimespan;
+    /** Block height at which LWMA per-block difficulty adjustment activates. */
+    int nLWMAActivationHeight;
+    /** LWMA averaging window: number of recent blocks used to calculate difficulty. */
+    int nLWMAWindow;
     std::chrono::seconds PowTargetSpacing() const
     {
         return std::chrono::seconds{nPowTargetSpacing};
