@@ -2054,44 +2054,95 @@ static bool VerifyWitnessProgram(const CScriptWitness& witness, int witversion, 
         }
     } else if (witversion == 2 && program.size() == 32 && !is_p2sh) {
         // NEX Witness v2: Post-Quantum (ML-DSA-65) spend.
-        // Witness must contain exactly 2 items:
+        //
+        // Two spending paths:
+        //
+        // Path A — ML-DSA-65 (standard, 2 witness items):
         //   [0] = ML-DSA-65 signature (up to 3,309 bytes) + 1-byte sighash type
         //   [1] = ML-DSA-65 public key (exactly 1,952 bytes)
+        //   Validation: SHA-256(pubkey) == program, then verify sig
         //
-        // The program (32 bytes) is SHA-256(pubkey).
-        // Validation:
-        //   1. Check witness has exactly 2 items
-        //   2. Check pubkey is 1,952 bytes
-        //   3. Check SHA-256(pubkey) == program
-        //   4. Verify ML-DSA-65 signature via CheckPQSig
+        // Path B — Seed recovery (1 witness item):
+        //   [0] = seed preimage (exactly 64 bytes, the BIP-39 seed)
+        //   Validation: SHA-256(seed || "NEX-CLI-KEY-0") == program
+        //   This recovers UTXOs created by the CLI wallet's placeholder keygen.
 
-        if (stack.size() != 2) {
+        if (stack.size() == 2) {
+            // ── Path A: ML-DSA-65 signature verification ──
+            const valtype& vchSig = stack[0];
+            const valtype& vchPubKey = stack[1];
+
+            // Check pubkey size
+            if (vchPubKey.size() != PQ_PUBKEY_SIZE) {
+                return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
+            }
+
+            // Check SHA-256(pubkey) == witness program
+            uint256 pubkeyHash;
+            CSHA256().Write(vchPubKey.data(), vchPubKey.size()).Finalize(pubkeyHash.data());
+            if (memcmp(pubkeyHash.data(), program.data(), 32) != 0) {
+                return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
+            }
+
+            // Verify ML-DSA-65 signature via the checker
+            CScript witnessScript;
+            witnessScript << OP_2 << std::vector<unsigned char>(program.begin(), program.end());
+            if (!checker.CheckPQSig(vchSig, vchPubKey, witnessScript, SigVersion::WITNESS_V0)) {
+                return set_error(serror, SCRIPT_ERR_CHECKSIGVERIFY);
+            }
+
+            return set_success(serror);
+
+        } else if (stack.size() == 1 && stack[0].size() >= 64) {
+            // ── Path B: Seed spend (deterministic address derivation) ──
+            //
+            // Witness format:
+            //   Exactly 64 bytes  → seed for index 0 (backward compatible)
+            //   65+ bytes         → first 64 = seed, remaining = UTF-8 index string
+            //
+            // Validation: SHA-256(seed || "NEX-CLI-KEY-" || index_str) == program
+
+            const valtype& vchWitness = stack[0];
+
+            // Extract seed (first 64 bytes) and index string (remaining bytes, if any)
+            std::string indexStr;
+            if (vchWitness.size() == 64) {
+                indexStr = "0";  // backward compatible: bare seed = index 0
+            } else {
+                // Extra bytes after the 64-byte seed are the UTF-8 index string
+                size_t extraLen = vchWitness.size() - 64;
+                if (extraLen > 10) {
+                    // Sanity: index string shouldn't exceed 10 chars (up to ~4 billion)
+                    return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
+                }
+                indexStr.assign(vchWitness.begin() + 64, vchWitness.end());
+                // Validate: must be digits only
+                for (char c : indexStr) {
+                    if (c < '0' || c > '9') {
+                        return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
+                    }
+                }
+            }
+
+            const std::string tag = "NEX-CLI-KEY-" + indexStr;
+
+            // Compute SHA-256(seed || tag)
+            uint256 seedHash;
+            CSHA256()
+                .Write(vchWitness.data(), 64)  // only the 64-byte seed portion
+                .Write(reinterpret_cast<const unsigned char*>(tag.data()), tag.size())
+                .Finalize(seedHash.data());
+
+            // Check against witness program
+            if (memcmp(seedHash.data(), program.data(), 32) != 0) {
+                return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
+            }
+
+            return set_success(serror);
+
+        } else {
             return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
         }
-
-        const valtype& vchSig = stack[0];
-        const valtype& vchPubKey = stack[1];
-
-        // Check pubkey size
-        if (vchPubKey.size() != PQ_PUBKEY_SIZE) {
-            return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
-        }
-
-        // Check SHA-256(pubkey) == witness program
-        uint256 pubkeyHash;
-        CSHA256().Write(vchPubKey.data(), vchPubKey.size()).Finalize(pubkeyHash.data());
-        if (memcmp(pubkeyHash.data(), program.data(), 32) != 0) {
-            return set_error(serror, SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH);
-        }
-
-        // Verify ML-DSA-65 signature via the checker
-        CScript witnessScript;
-        witnessScript << OP_2 << std::vector<unsigned char>(program.begin(), program.end());
-        if (!checker.CheckPQSig(vchSig, vchPubKey, witnessScript, SigVersion::WITNESS_V0)) {
-            return set_error(serror, SCRIPT_ERR_CHECKSIGVERIFY);
-        }
-
-        return set_success(serror);
     } else if (!is_p2sh && CScript::IsPayToAnchor(witversion, program)) {
         return true;
     } else {
