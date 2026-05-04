@@ -479,14 +479,16 @@ sudo apt install -y build-essential cmake pkg-config libssl-dev libevent-dev \
 # Clone + build
 git clone https://github.com/SystemThreat/NEX.git
 cd NEX
-cmake -B build
+cmake -B build -DENABLE_IPC=OFF
 cmake --build build -j$(nproc)
 
 # Resulting binaries
 ls build/bin/  # nexd, nex-cli, nex-wallet, nex-tx, bitcoin-util
 ```
 
-Build time is ~10–20 min on a 4-core box.
+`-DENABLE_IPC=OFF` disables Bitcoin Core's optional multiprocess support; without it `cmake` fails on systems that don't have `libcapnp` installed.
+
+Build time is hardware-dependent: ~15 min on a modern 4-core/8-thread workstation, ~30–60 min on a 2-vCPU cloud VM (e2-small / t3.small class).
 
 ### Run
 
@@ -495,14 +497,19 @@ mkdir -p ~/.nex
 cat > ~/.nex/nex.conf <<EOF
 rpcuser=nex
 rpcpassword=$(openssl rand -hex 32)
+rpcport=9332
 rpcallowip=127.0.0.1
 server=1
 listen=1
 txindex=1
+dnsseed=0
 EOF
+chmod 600 ~/.nex/nex.conf
 
-build/bin/nexd -daemon
+build/bin/nexd -daemon -nodnsseed -nofixedseeds
 ```
+
+The `rpcport=9332` line is required if you intend to run the bundled `pool/nex_pool.py` against this node — the pool defaults to port 9332 (Bitcoin Core's default 8332 is used for the legacy chain). The `dnsseed=0` and `-nodnsseed -nofixedseeds` flags work around a known BIP155 peer-record deserialization issue (see *Known Issues* below).
 
 The node will:
 
@@ -529,7 +536,7 @@ Wants=network-online.target
 [Service]
 Type=forking
 User=ubuntu
-ExecStart=/usr/local/bin/nexd -daemon -conf=/home/ubuntu/.nex/nex.conf
+ExecStart=/usr/local/bin/nexd -daemon -conf=/home/ubuntu/.nex/nex.conf -nodnsseed -nofixedseeds
 ExecStop=/usr/local/bin/nex-cli -conf=/home/ubuntu/.nex/nex.conf stop
 Restart=on-failure
 RestartSec=10
@@ -543,6 +550,20 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 sudo systemctl enable --now nexd
 ```
+
+### Known issues for fresh node operators
+
+Two issues affect a from-scratch node bootstrap. Workarounds are in the config above; the underlying bugs are tracked for a future release.
+
+1. **BIP155 peer-record deserialization.** When a fresh node receives the network's peer-list message, an edge case in BIP155 address parsing can cause `nexd` to abort. The workaround — already applied in the example config and systemd unit above — is to disable DNS seeds and fixed seeds (`dnsseed=0`, `-nodnsseed -nofixedseeds`) and use explicit `connect=` peers (see below) for initial join. Once the node has a stable peer set on disk (`peers.dat`), the workaround can stay or be removed at the operator's discretion.
+
+2. **Header sync stalls at the LWMA activation height during from-genesis P2P sync.** A node syncing from block 0 over the P2P network gets stuck around the LWMA difficulty-adjustment activation height (~1300) and does not advance. While this is being fixed, the recommended path for a fresh deployment is:
+
+   - Run with the workaround flags above.
+   - Add `connect=<peer>:9333` lines to `~/.nex/nex.conf` pointing at one or more nodes from `seed.knexcoin.com` (e.g. `dig +short seed.knexcoin.com`).
+   - If you have access to an already-synced node, copy its `~/.nex/blocks/`, `~/.nex/chainstate/`, and `~/.nex/indexes/` directories before first start. The node will validate the imported blocks on next launch and pick up the live tip from peers.
+
+   A signed bootstrap-snapshot URL will be published in a future release so this manual step is no longer required.
 
 ### Network bootstrap — how peer discovery works
 
