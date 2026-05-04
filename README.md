@@ -561,9 +561,28 @@ Two issues affect a from-scratch node bootstrap. Workarounds are in the config a
 
    - Run with the workaround flags above.
    - Add `connect=<peer>:9333` lines to `~/.nex/nex.conf` pointing at one or more nodes from `seed.knexcoin.com` (e.g. `dig +short seed.knexcoin.com`).
-   - If you have access to an already-synced node, copy its `~/.nex/blocks/`, `~/.nex/chainstate/`, and `~/.nex/indexes/` directories before first start. The node will validate the imported blocks on next launch and pick up the live tip from peers.
+   - **Bootstrap snapshot (recommended).** Skip from-genesis P2P sync entirely by downloading a recent chain snapshot:
 
-   A signed bootstrap-snapshot URL will be published in a future release so this manual step is no longer required.
+     ```bash
+     mkdir -p ~/.nex
+     cd ~/.nex
+
+     # Find latest snapshot URL + checksum
+     curl -s https://untraceablex.com/bootstrap/latest.json
+     # → {"latest":"nex-bootstrap-NNNN.tar.gz","sha256":"...","download_url":"..."}
+
+     # Download + verify
+     curl -L -O https://untraceablex.com/bootstrap/nex-bootstrap-NNNN.tar.gz
+     echo "<sha256-from-latest.json>  nex-bootstrap-NNNN.tar.gz" | sha256sum -c
+
+     # Extract + start (replace NNNN with actual height)
+     tar xzf nex-bootstrap-NNNN.tar.gz
+     # Now ~/.nex/blocks, ~/.nex/chainstate, ~/.nex/indexes are populated
+     ```
+
+     After extraction, start `nexd` as described above. It will validate the imported blocks on first launch and then sync the small remaining gap from peers (which works fine for short gaps — only the from-genesis-to-LWMA-activation case stalls).
+
+     The snapshot is regenerated periodically from the live network. The `sha256` in `latest.json` is the integrity check; signing infrastructure is on the roadmap.
 
 ### Network bootstrap — how peer discovery works
 
